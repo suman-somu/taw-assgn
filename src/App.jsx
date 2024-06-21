@@ -1,6 +1,7 @@
-import './App.css';
 import React, { Fragment } from 'react';
 import axios from 'axios';
+import Button from './components/Button';
+import PaymentCard from './components/PaymentCard';
 
 function App() {
   const [token, setToken] = React.useState("");
@@ -9,6 +10,7 @@ function App() {
   const [signature, setSignature] = React.useState("");
   const [_id, setId] = React.useState("");
   const [verification, setVerification] = React.useState(false);
+  const [mobileNumber, setMobileNumber] = React.useState("");
 
 
   const loadScript = (src) => {
@@ -41,8 +43,8 @@ function App() {
 
   const verifyOTP = () => {
     const data = JSON.stringify({
-      mobile: "+912144419015",
-      otp: "8899"
+      mobile: mobileNumber,
+      otp: "8899"  // Note: You might want to add an input for OTP as well
     });
 
     axios.post('https://api.testbuddy.live/v1/auth/verifyotp', data, {
@@ -73,7 +75,6 @@ function App() {
       }
     })
       .then(response => {
-        console.log("Order created:", JSON.stringify(response.data));
         setId(response.data._id);  
         handleRazorpayScreen(response.data.amount, response.data.transactionOrderId);
       })
@@ -98,9 +99,6 @@ function App() {
       image: 'https://example.com/your_logo',
       order_id: order_id,
       handler: function (response) {
-        console.log("signature ", response.razorpay_signature)
-        console.log("payment id ", response.razorpay_payment_id)
-        console.log("order id ", response.razorpay_order_id)
         setPaymentId(response.razorpay_payment_id);
         setSignature(response.razorpay_signature);
       },
@@ -131,8 +129,6 @@ function App() {
       }
     })
       .then(response => {
-        console.log(JSON.stringify(response.data));
-        console.log("Payment verified:", response.data.success)
         setVerification(response.data.success);
       })
       .catch(error => {
@@ -141,20 +137,44 @@ function App() {
   };
 
   return (
-    <Fragment>
-      <main>
-        {token && <p>{token}</p>}
-        <button onClick={verifyOTP}> verify OTP</button>
-        <br />
-        {razorpaykey && <p>{razorpaykey}</p>}
-        <button onClick={getRazorpayKey} >get razorpay key</button>
-        <br />
-        <button onClick={() => createRazorpayOrder(400000)}>Pay</button>
-        <br />
-        {verification && <p>{verification.toString()}</p>}
-        <button onClick={verifyPayment}>verify</button>
-      </main>
-    </Fragment>
+    <div className="bg-gradient-to-r from-blue-100 to-purple-100 min-h-screen flex justify-center items-center p-4">
+      <div className="w-full max-w-md">
+        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Payment Gateway</h1>
+        <div className="space-y-4">
+          <PaymentCard
+            title="OTP Verification"
+            value={token && `Token: ${token}`}
+            buttonText="Verify OTP"
+            onClick={verifyOTP}
+          >
+            <input
+              type="tel"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              placeholder="Enter mobile number"
+              className="w-full p-2 border rounded mb-2"
+            />
+          </PaymentCard>
+          <PaymentCard
+            title="Razorpay Key"
+            value={razorpaykey && `Key: ${razorpaykey}`}
+            buttonText="Get Razorpay Key"
+            onClick={() => getRazorpayKey(token)}
+          />
+          <PaymentCard
+            title="Make Payment"
+            buttonText="Pay ₹4000"
+            onClick={() => createRazorpayOrder(400000)}
+          />
+          <PaymentCard
+            title="Payment Verification"
+            value={verification !== undefined && `Status: ${verification.toString()}`}
+            buttonText="Verify Payment"
+            onClick={verifyPayment}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
